@@ -5,9 +5,9 @@ export default async function handler(req, res) {
   if (req.query.get === "cpu") {
     si.cpuTemperature()
       .then(async (data) => {
-        res.status(200).json({
+        await res.status(200).json({
           name: "CPU",
-          usage: await cpu.usage(1000),
+          usage: cpu.usage(1000),
           load: cpu.loadavgTime(5).toFixed(2),
           model: cpu.model(),
           cpus: cpu.count(),
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   } else if (req.query.get === "memory") {
     res.json({
       name: "Memory",
-      memory: mem.info(),
+      memory: await mem.info(),
     });
   } else if (req.query.get === "drive") {
     res.json({
@@ -33,30 +33,32 @@ export default async function handler(req, res) {
       hostName: os.hostname(),
     });
   } else {
-    si.cpuTemperature().then(async (data) => {
-      res.status(200).send([
-        {
-          name: "CPU",
-          usage: await cpu.usage(1000),
-          load: cpu.loadavgTime(5).toFixed(2),
-          model: cpu.model(),
-          cpus: cpu.count(),
-          temp: data,
-        },
-        {
-          name: "Memory",
-          memory: await mem.info(),
-        },
-        // {
-        //   drive: await drive.info(),
-        // },
-        {
-          name: "OS",
-          type: await os.oos(),
-          ip: await os.ip(),
-          hostName: await os.hostname(),
-        },
-      ]);
-    });
+    si.cpuTemperature()
+      .then(async (data) => {
+        await res.status(200).send([
+          {
+            name: "CPU",
+            usage: cpu.usage(1000),
+            load: cpu.loadavgTime(5).toFixed(2),
+            model: cpu.model(),
+            cpus: cpu.count(),
+            temp: data,
+          },
+          {
+            name: "Memory",
+            memory: await mem.info(),
+          },
+          {
+            drive: await drive.info(),
+          },
+          {
+            name: "OS",
+            type: os.oos(),
+            ip: os.ip(),
+            hostName: os.hostname(),
+          },
+        ]);
+      })
+      .catch((err) => console.log(err));
   }
 }
