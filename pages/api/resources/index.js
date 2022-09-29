@@ -1,33 +1,62 @@
-import { cpu, drive, mem, os, netstat } from "node-os-utils";
+import { cpu, drive, mem, os, net } from "node-os-utils";
 import * as si from "systeminformation";
 
 export default async function handler(req, res) {
-  si.cpuTemperature()
-    .then(async (data) => {
-      res.status(200).json([
+  if (req.query.get === "cpu") {
+    si.cpuTemperature()
+      .then(async (data) => {
+        res.status(200).json({
+          name: "CPU",
+          usage: await cpu.usage(1000),
+          load: cpu.loadavgTime(5).toFixed(2),
+          model: cpu.model(),
+          cpus: cpu.count(),
+          temp: data,
+        });
+      })
+      .catch((err) => res.send(err));
+  } else if (req.query.get === "memory") {
+    res.json({
+      name: "Memory",
+      memory: mem.info(),
+    });
+  } else if (req.query.get === "drive") {
+    res.json({
+      name: "Drive",
+      drive: drive.info(),
+    });
+  } else if (req.query.get === "os") {
+    res.json({
+      name: "OS",
+      type: os.oos(),
+      ip: os.ip(),
+      hostName: os.hostname(),
+    });
+  } else {
+    si.cpuTemperature().then(async (data) => {
+      res.status(200).send([
         {
-          cpu: {
-            usage: await cpu.usage(1000),
-            load: cpu.loadavgTime(5).toFixed(2),
-            model: cpu.model(),
-            cpus: cpu.count(),
-            temp: data,
-          },
+          name: "CPU",
+          usage: await cpu.usage(1000),
+          load: cpu.loadavgTime(5).toFixed(2),
+          model: cpu.model(),
+          cpus: cpu.count(),
+          temp: data,
+        },
+        {
+          name: "Memory",
+          memory: await mem.info(),
         },
         // {
         //   drive: await drive.info(),
         // },
         {
-          memory: await mem.info(),
-        },
-        {
-          OS: {
-            type: await os.oos(),
-            ip: await os.ip(),
-            hostName: await os.hostname(),
-          },
+          name: "OS",
+          type: await os.oos(),
+          ip: await os.ip(),
+          hostName: await os.hostname(),
         },
       ]);
-    })
-    .catch((err) => res.send(err));
+    });
+  }
 }
